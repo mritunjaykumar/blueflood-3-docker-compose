@@ -78,33 +78,5 @@ services:
     depends_on:
       - zookeeper
 
-  telegraf-blueflood-translator:
-    container_name: telegraf-blueflood-translator
-    image: blueflood/telegraf-blueflood-translator
-    ports:
-      - "8090:8090"
-    depends_on:
-      - kafka
-
-  elasticsearch-consumer:
-    container_name: elasticsearch-consumer
-    image: blueflood/elasticsearch-consumer
-    ports:
-      - "8091:8091"
-    depends_on:
-      - kafka
-      - elasticsearch
-
-  es-query-service:
-    container_name: es-query-service
-    image: blueflood/elasticsearch-query-service
-    # build:
-    #   context: ./elasticsearch-query-service
-    #   dockerfile: Dockerfile
-    ports:
-      - "8094:8094"
-    depends_on:
-      - elasticsearch
-      - cassandra
 networks:
   dc1ring:

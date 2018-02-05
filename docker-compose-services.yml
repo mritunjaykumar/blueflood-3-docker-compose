@@ -2,6 +2,18 @@
 version: '3'
 
 services:
+  telegraf-blueflood-translator:
+    container_name: telegraf-blueflood-translator
+    image: blueflood/telegraf-blueflood-translator
+    ports:
+      - "8090:8090"
+
+  elasticsearch-consumer:
+    container_name: elasticsearch-consumer
+    image: blueflood/elasticsearch-consumer
+    ports:
+      - "8091:8091"
+
   cassandra-consumer:
     container_name: cassandra-consumer
     image: blueflood/cassandra-consumer
@@ -13,3 +25,9 @@ services:
     image: blueflood/metrics-query-service
     ports:
       - "8093:8093"
+
+  es-query-service:
+    container_name: es-query-service
+    image: blueflood/elasticsearch-query-service
+    ports:
+      - "8094:8094"
