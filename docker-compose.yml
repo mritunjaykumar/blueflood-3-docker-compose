@@ -1,0 +1,110 @@
+# using Docker-Compose Version 3
+version: '3'
+
+services:
+  # Configuration for seed cassandra node. Also, this is the only node
+  cassandra:
+    container_name: cassandra-node
+    image: cassandra:2.1
+    ports:
+        - "7000:7000"
+        - "7001:7001"
+        - "9042:9042"
+        - "9160:9160"
+        - "7199:7199"
+
+    # Exposing ports for inter cluster communication.
+    expose:
+      - 7000 # Intra-node communication
+      - 7001 # TLS intra-node communication
+      - 7199 # JMX
+      - 9042 # CQL
+      - 9160 # Thrift service
+
+    command: bash -c 'if [ -z "$$(ls -A /var/lib/cassandra/)" ] ; then sleep 0; fi && /docker-entrypoint.sh cassandra -f'
+
+    # Network for the nodes to communicate
+    networks:
+      - dc1ring
+
+    # Maps cassandra data to a local folder. This preserves data across
+    # container restarts. Note a folder 'cassdata' gets created locally in HOME directory.
+    volumes:
+      - ${HOME}/cassdata:/var/lib/cassandra
+
+    # Docker container environment variable. We are using the
+    # CASSANDRA_CLUSTER_NAME to name the cluster. This needs to be the same
+    # across clusters. We are also declaring that 'cassandra' is a seed node.
+    environment:
+      - CASSANDRA_CLUSTER_NAME=dev_cluster
+      - CASSANDRA_SEEDS=cassandra
+
+    # Cassandra ulimt recommended settings
+    ulimits:
+      memlock: -1
+      nproc: 32768
+      nofile: 100000
+
+  elasticsearch:
+    container_name: elasticsearch-node
+    #image: elasticsearch:1.7
+    image: elasticsearch:2.4.1
+    #image: elasticsearch:5.6.5
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    command: elasticsearch -Des.cluster.name="elasticsearch"
+    #command: elasticsearch -Ecluster.name="elasticsearch"
+    volumes:
+      - ${HOME}/esdata:/usr/share/elasticsearch/data
+    environment:
+      - cluster.name="elasticsearch"
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+  kafka:
+    container_name: kafka-node
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 192.168.1.2
+      KAFKA_CREATE_TOPICS: "telegraf:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper
+
+  telegraf-blueflood-translator:
+    container_name: telegraf-blueflood-translator
+    image: blueflood/telegraf-blueflood-translator
+    ports:
+      - "8090:8090"
+    depends_on:
+      - kafka
+
+  elasticsearch-consumer:
+    container_name: elasticsearch-consumer
+    image: blueflood/elasticsearch-consumer
+    ports:
+      - "8091:8091"
+    depends_on:
+      - kafka
+      - elasticsearch
+
+  es-query-service:
+    container_name: es-query-service
+    image: blueflood/elasticsearch-query-service
+    # build:
+    #   context: ./elasticsearch-query-service
+    #   dockerfile: Dockerfile
+    ports:
+      - "8094:8094"
+    depends_on:
+      - elasticsearch
+      - cassandra
+networks:
+  dc1ring:

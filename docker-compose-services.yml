@@ -1,0 +1,15 @@
+# using Docker-Compose Version 3
+version: '3'
+
+services:
+  cassandra-consumer:
+    container_name: cassandra-consumer
+    image: blueflood/cassandra-consumer
+    ports:
+      - "8092:8092"
+
+  metrics-query-service:
+    container_name: metrics-query-service
+    image: blueflood/metrics-query-service
+    ports:
+      - "8093:8093"
