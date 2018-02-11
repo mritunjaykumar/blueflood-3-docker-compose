@@ -5,29 +5,41 @@ services:
   telegraf-blueflood-translator:
     container_name: telegraf-blueflood-translator
     image: blueflood/telegraf-blueflood-translator
+    environment:
+      - KAFKA_SERVER=192.168.1.2:9092
     ports:
       - "8090:8090"
 
   elasticsearch-consumer:
     container_name: elasticsearch-consumer
     image: blueflood/elasticsearch-consumer
+    environment:
+      - KAFKA_SERVER=192.168.1.2:9092
+      - ES_URL=http://192.168.1.2:9200
     ports:
       - "8091:8091"
 
   cassandra-consumer:
     container_name: cassandra-consumer
     image: blueflood/cassandra-consumer
+    environment:
+      - KAFKA_SERVER=192.168.1.2:9092
+      - CASSANDRA_CONTACT_POINTS=192.168.1.2
     ports:
       - "8092:8092"
 
   metrics-query-service:
     container_name: metrics-query-service
     image: blueflood/metrics-query-service
+    environment:
+      - CASSANDRA_CONTACT_POINTS=192.168.1.2
     ports:
       - "8093:8093"
 
   es-query-service:
     container_name: es-query-service
     image: blueflood/elasticsearch-query-service
+    environment:
+      - ES_URL=http://192.168.1.2:9200
     ports:
       - "8094:8094"
